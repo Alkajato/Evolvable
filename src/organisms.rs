@@ -2,9 +2,11 @@ use rand::{Rng, thread_rng};
 use rayon::prelude::*;
         
 pub trait Organism {
-    /// Calculate and return a fitness score using this. This function may be called multiple times so returning a field of the result cached is a good idea.
+    /// Calculate and return a fitness score using this.
     fn calculate_fitness(&self) -> f64;
+    /// Combine the genetic content of the two parent args and make the self contain the resulting DNA.
     fn cross_over(&mut self, parent1: &Self, parent2: &Self);
+    /// Modify the DNA of the Organism randomly.
     fn mutate(&mut self);
 }
 
