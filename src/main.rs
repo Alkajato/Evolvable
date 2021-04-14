@@ -34,7 +34,6 @@ fn main() {
         population.push(EvNum {fitness: 10 as f64});
     }
 
-    // This loop will run until it crashes the whole program.
     loop {
         let measure = Instant::now();
         par_evolve(&mut population);
