@@ -38,9 +38,6 @@ pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) { // Approxim
         let parent1 = &top[range.sample(rng)];
         let parent2 = &top[range.sample(rng)];
 
-        // let parent1 = &top[rng.gen_range(0..top.len())];
-        // let parent2 = &top[rng.gen_range(0..top.len())];
-
         elem.cross_over(parent1, parent2);
         elem.mutate();
     });
