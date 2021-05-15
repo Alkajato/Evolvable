@@ -21,6 +21,7 @@ impl StopWatch {
         self.start = Instant::now();
     }
 
+    /// Records another "iteration" into the average.
     pub fn lap(&mut self) {
         self.average_time = 
         if self.iterations <= 0 {
@@ -32,10 +33,12 @@ impl StopWatch {
         self.iterations += 1;
     }
 
+    /// Quits recording, creates the average time each lap took.
     pub fn stop(&mut self) {
         self.average_time /= self.iterations as f64;
     }
 
+    /// Writes data about the average time per lap to file.
     pub fn make_results(&mut self, file_name: &str) -> std::io::Result<()> {
         self.stop();
 

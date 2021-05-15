@@ -1,4 +1,4 @@
-use rand::{Rng, thread_rng};
+use rand::{distributions::Uniform, prelude::Distribution, thread_rng};
 use rayon::prelude::*;
         
 pub trait Organism {
@@ -13,11 +13,13 @@ pub trait Organism {
 /// Iterates over input and calls calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
 pub fn evolve(population: &mut [impl Organism]) {
     let (bottom, top) = population.split_at_mut(population.len() / 2); // Continually splitting_at_mut was 3.07 times slower than splitting once.
+    
     let mut rng = thread_rng();
+    let range = Uniform::from(0..top.len()); // Using a range to sample from is approximately 13.43% faster.
 
     for elem in bottom {
-        let parent1 = &top[rng.gen_range(0..top.len())];
-        let parent2 = &top[rng.gen_range(0..top.len())];
+        let parent1 = &top[range.sample(&mut rng)];
+        let parent2 = &top[range.sample(&mut rng)];
 
         elem.cross_over(parent1, parent2);
         elem.mutate();
@@ -30,10 +32,14 @@ pub fn evolve(population: &mut [impl Organism]) {
 /// Multiple cores iterate over input and call calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
 pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) { // Approximately 5~ times faster than sequential.
     let (bottom, top) = population.split_at_mut(population.len() / 2);
+    let range = Uniform::from(0..top.len());
 
-    bottom.into_par_iter().for_each_init(rand::thread_rng, |rng, elem| { // Parallel approach is 4.15~ times faster.
-        let parent1 = &top[rng.gen_range(0..top.len())];
-        let parent2 = &top[rng.gen_range(0..top.len())];
+    bottom.into_par_iter().for_each_init(|| rand::thread_rng(), |rng, elem| { // Parallel approach is 4.15~ times faster.
+        let parent1 = &top[range.sample(rng)];
+        let parent2 = &top[range.sample(rng)];
+
+        // let parent1 = &top[rng.gen_range(0..top.len())];
+        // let parent2 = &top[rng.gen_range(0..top.len())];
 
         elem.cross_over(parent1, parent2);
         elem.mutate();
@@ -43,6 +49,6 @@ pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) { // Approxim
     population.par_sort_unstable_by(|a, b| a.calculate_fitness().partial_cmp(&b.calculate_fitness()).unwrap());
 }
 
-// Referring to  test.rs for separate tests file.
+// Referring to test.rs for separate tests file.
 #[cfg(test)]
 mod test;
