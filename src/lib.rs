@@ -30,7 +30,7 @@ pub fn evolve(population: &mut [impl Organism]) {
 }
 
 /// Multiple cores iterate over input and call calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
-pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) { // Approximately 5~ times faster than sequential.
+pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let (bottom, top) = population.split_at_mut(population.len() / 2);
     let range = Uniform::from(0..top.len());
 
