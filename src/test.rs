@@ -6,6 +6,7 @@ use crate::Organism;
 
 use self::test_file_writer::StopWatch;
 mod test_file_writer;
+
 struct EvNum {
     fitness: f64,
 }
@@ -68,7 +69,7 @@ fn test_evolve() {
     // Benchmarking and writing to file.
     // TODO: Print average % improved each generation.
     let mut writer = StopWatch::new();
-
+    
     for _ in ITERATIONS {
         writer.start();
 
@@ -79,10 +80,7 @@ fn test_evolve() {
         assert!(population[POP_SIZE - 1].fitness > population[0].fitness);
     }
 
-    match writer.make_results("time_evolve().txt") {
-        Ok(_) => (),
-        Err(err) => eprintln!("Could not write results file! {}", err),
-    };
+    writer.make_results("time_evolve().txt");
 }
 
 #[test]
@@ -109,8 +107,5 @@ fn test_par_evolve() {
         assert!(population[POP_SIZE - 1].fitness > population[0].fitness);
     }
 
-    match writer.make_results("time_par_evolve().txt") {
-        Ok(_) => (),
-        Err(err) => eprintln!("Could not write results file! {}", err),
-    };
+    writer.make_results("time_par_evolve().txt");
 }
