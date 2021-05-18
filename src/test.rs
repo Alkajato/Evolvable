@@ -1,5 +1,3 @@
-use std::thread::current;
-
 use rand::{thread_rng, Rng};
 
 use crate::evolve;
