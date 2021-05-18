@@ -49,9 +49,7 @@ fn get_average(population: &[impl Organism]) -> f64 {
         average += each.calculate_fitness();
     }
 
-    average /= population.len() as f64;
-    
-    average
+    average / (population.len() as f64)
 }
 
 const ITERATIONS: std::ops::Range<i32> = 0..12;
