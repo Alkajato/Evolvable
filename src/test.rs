@@ -39,6 +39,21 @@ fn make_ev_nums(size: usize) -> Vec<EvNum> {
     population
 }
 
+fn get_average(population: &[impl Organism]) -> f64 {
+    let mut average = 0.0;
+    for each in population {
+        if average == 0.0 {
+            average = each.calculate_fitness();
+        }
+
+        average += each.calculate_fitness();
+    }
+
+    average /= population.len() as f64;
+    
+    average
+}
+
 const ITERATIONS: std::ops::Range<i32> = 0..12;
 const POP_SIZE: usize = 5_000_000;
 
@@ -46,33 +61,15 @@ const POP_SIZE: usize = 5_000_000;
 fn test_evolve() {
     // Testing if the code is actually functional.
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-    let (mut current_average, mut previous_average) = (0.0, 0.0);
-
-    for each in &population {
-        if previous_average == 0.0 {
-            previous_average = each.calculate_fitness();
-        }
-
-        previous_average += each.calculate_fitness();
-    }
-    previous_average /= POP_SIZE as f64;
-
+    
+    let previous_average = get_average(&population);
     evolve(&mut population);
-
-    for each in population {
-        if current_average == 0.0 {
-            current_average = each.calculate_fitness();
-        }
-
-        current_average += each.calculate_fitness();
-    }
-    current_average /= POP_SIZE as f64;
+    let current_average = get_average(&population);
 
     assert!(current_average >= previous_average);
 
     // Benchmarking and writing to file.
     // TODO: Print average % improved each generation.
-    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
     let mut writer = StopWatch::new();
 
     for _ in ITERATIONS {
@@ -94,33 +91,15 @@ fn test_evolve() {
 #[test]
 fn test_par_evolve() {
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-    let (mut current_average, mut previous_average) = (0.0, 0.0);
-
-    for each in &population {
-        if previous_average == 0.0 {
-            previous_average = each.calculate_fitness();
-        }
-
-        previous_average += each.calculate_fitness();
-    }
-    previous_average /= POP_SIZE as f64;
-
+    
+    let previous_average = get_average(&population);
     par_evolve(&mut population);
-
-    for each in population {
-        if current_average == 0.0 {
-            current_average = each.calculate_fitness();
-        }
-
-        current_average += each.calculate_fitness();
-    }
-    current_average /= POP_SIZE as f64;
+    let current_average = get_average(&population);
 
     assert!(current_average >= previous_average);
 
     // Benchmarking and writing to file.
     // TODO: Print average % improved each generation.
-    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
     let mut writer = StopWatch::new();
 
     for _ in ITERATIONS {
