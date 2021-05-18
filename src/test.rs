@@ -31,7 +31,7 @@ impl Organism for EvNum {
 fn make_ev_nums(size: usize) -> Vec<EvNum> {
     let mut population: Vec<EvNum> = Vec::with_capacity(size);
     for _ in 0..size {
-        population.push(EvNum { fitness: 10 as f64 });
+        population.push(EvNum { fitness: INITIAL_FITNESS_SCORE });
     }
 
     population
@@ -51,6 +51,7 @@ fn get_average(population: &[impl Organism]) -> f64 {
 }
 
 const ITERATIONS: std::ops::Range<i32> = 0..12;
+const INITIAL_FITNESS_SCORE: f64 = 10.0;
 const POP_SIZE: usize = 5_000_000;
 
 #[test]
@@ -62,7 +63,7 @@ fn test_evolve() {
     evolve(&mut population);
     let current_average = get_average(&population);
 
-    assert!(current_average >= previous_average);
+    assert!(current_average > previous_average);
 
     // Benchmarking and writing to file.
     // TODO: Print average % improved each generation.
