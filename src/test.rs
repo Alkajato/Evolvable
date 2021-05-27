@@ -1,7 +1,9 @@
 use rand::{thread_rng, Rng};
 
+
 use crate::evolve;
 use crate::par_evolve;
+use crate::best_two;
 use crate::Organism;
 
 use self::test_file_writer::StopWatch;
@@ -57,7 +59,6 @@ const POP_SIZE: usize = 5_000_000;
 
 #[test]
 fn test_evolve() {
-    // Testing if the code is actually functional.
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
     
     let previous_average = get_average(&population);
@@ -93,8 +94,6 @@ fn test_par_evolve() {
 
     assert!(current_average >= previous_average);
 
-    // Benchmarking and writing to file.
-    // TODO: Print average % improved each generation.
     let mut writer = StopWatch::new();
 
     for _ in ITERATIONS {
@@ -108,4 +107,25 @@ fn test_par_evolve() {
     }
 
     writer.make_results("time_par_evolve().txt");
+}
+
+#[test]
+fn test_best_two() {
+    let mut array = make_ev_nums(3);
+    array[0].fitness = 0.0;
+    array[1].fitness = 5.0;
+    array[2].fitness = 6.0;
+
+    let (one, two) = best_two(&array);
+    assert!(one.fitness != array[0].fitness);
+    assert!(two.fitness != array[0].fitness);
+    assert!(one.fitness != two.fitness);
+
+    array[0].fitness = 0.0;
+    array[1].fitness = 6.0;
+    array[2].fitness = 6.0;
+
+    let (one, two) = best_two(&array);
+    assert!(one.fitness != array[0].fitness);
+    assert!(two.fitness != array[0].fitness);
 }
