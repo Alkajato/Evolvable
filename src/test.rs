@@ -2,6 +2,7 @@ use rand::{thread_rng, Rng};
 
 use crate::evolve;
 use crate::par_evolve;
+use crate::cellular_evolve;
 use crate::Organism;
 
 use self::test_file_writer::StopWatch;
@@ -22,9 +23,7 @@ impl Organism for EvNum {
     }
 
     fn mutate(&mut self) {
-        let range = self.fitness * 2.0;
-
-        let value = thread_rng().gen_range(-range..range);
+        let value: f64 = thread_rng().gen_range(-50.0..50.0);
         self.fitness += value;
     }
 }
@@ -107,4 +106,27 @@ fn test_par_evolve() {
     }
 
     writer.make_results("time_par_evolve().txt");
+}
+
+#[test]
+fn test_cellular_evolve() {
+    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
+
+    let previous_average = get_average(&population);
+    par_evolve(&mut population);
+    let current_average = get_average(&population);
+
+    assert!(current_average >= previous_average, "{}, {}", previous_average, current_average);
+
+    let mut writer = StopWatch::new();
+
+    for _ in ITERATIONS {
+        writer.start();
+
+        cellular_evolve(&mut population);
+
+        writer.lap();
+    }
+
+    writer.make_results("time_cellular_evolve().txt");
 }
