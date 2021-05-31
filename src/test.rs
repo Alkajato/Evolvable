@@ -116,7 +116,7 @@ fn test_cellular_evolve() {
     par_evolve(&mut population);
     let current_average = get_average(&population);
 
-    assert!(current_average >= previous_average, "{}, {}", previous_average, current_average);
+    assert!(current_average >= previous_average);
 
     let mut writer = StopWatch::new();
 
