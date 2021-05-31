@@ -1,7 +1,6 @@
 use rand::{thread_rng, Rng};
 
 use crate::evolve;
-use crate::par_evolve;
 use crate::Organism;
 
 use self::test_file_writer::StopWatch;
@@ -22,7 +21,9 @@ impl Organism for EvNum {
     }
 
     fn mutate(&mut self) {
-        let value: f64 = thread_rng().gen_range(-50.0..50.0);
+        let max = 50.0;
+
+        let value: f64 = thread_rng().gen_range(-max..max);
         self.fitness += value;
     }
 }
@@ -31,7 +32,7 @@ fn make_ev_nums(size: usize) -> Vec<EvNum> {
     let mut population: Vec<EvNum> = Vec::with_capacity(size);
     for _ in 0..size {
         population.push(EvNum {
-            fitness: INITIAL_FITNESS_SCORE,
+            fitness: thread_rng().gen::<f64>(),
         });
     }
 
@@ -52,7 +53,6 @@ fn get_average(population: &[impl Organism]) -> f64 {
 }
 
 const ITERATIONS: std::ops::Range<i32> = 0..12;
-const INITIAL_FITNESS_SCORE: f64 = 10.0;
 const POP_SIZE: usize = 5_000_000;
 
 #[test]
@@ -63,44 +63,14 @@ fn test_evolve() {
     evolve(&mut population);
     let current_average = get_average(&population);
 
-    assert!(current_average > previous_average);
+    assert!(current_average > previous_average, "C_Avg: {}, P_Avg: {}", current_average, previous_average);
 
-    // Benchmarking and writing to file.
-    // TODO: Print average % improved each generation.
     let mut writer = StopWatch::new();
-
     for _ in ITERATIONS {
         writer.start();
-
         evolve(&mut population);
-
         writer.lap();
     }
 
     writer.make_results("time_evolve().txt");
-}
-
-#[test]
-fn test_par_evolve() {
-    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-
-    let previous_average = get_average(&population);
-    par_evolve(&mut population);
-    let current_average = get_average(&population);
-
-    assert!(current_average >= previous_average);
-
-    let mut writer = StopWatch::new();
-
-    for _ in ITERATIONS {
-        writer.start();
-
-        par_evolve(&mut population);
-
-        writer.lap();
-
-        assert!(population[POP_SIZE - 1].fitness > population[0].fitness);
-    }
-
-    writer.make_results("time_par_evolve().txt");
 }

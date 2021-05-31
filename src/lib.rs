@@ -10,63 +10,16 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
-/// Iterates over input and calls calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
-// pub fn evolve(population: &mut [impl Organism]) {
-//     let (bottom, top) = population.split_at_mut(population.len() / 2); // Continually splitting_at_mut was 3.07 times slower than splitting once.
-
-//     let mut rng = thread_rng();
-//     let range = Uniform::from(0..top.len()); // Using a range to sample from is approximately 13.43% faster.
-
-//     for elem in bottom {
-//         let mate = &top[range.sample(&mut rng)];
-
-//         elem.mate(mate);
-//         elem.mutate();
-//     }
-
-//     // Really want this to work with sort_by_cached_key instead.
-//     population.sort_unstable_by(|a, b| {
-//         a.calculate_fitness()
-//             .partial_cmp(&b.calculate_fitness())
-//             .unwrap()
-//     });
-// }
-
-// Get par_evolve() to eventually use evolve(), test if evolve() is better than cellular genetic algorithm.
-/// Multiple cores iterate over input and call calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
-pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) {
-    let (bottom, top) = population.split_at_mut(population.len() / 2);
-    let range = Uniform::from(0..top.len());
-
-    bottom.into_par_iter().for_each_init(
-        || rand::thread_rng(),
-        |rng, elem| {
-            // Parallel approach is 4.15~ times faster.
-            let mate = &top[range.sample(rng)];
-
-            elem.mate(mate);
-            elem.mutate();
-        },
-    );
-
-    // Sorting with parallelism is 4.1~ times faster than sequentially.
-    population.par_sort_unstable_by(|a, b| {
-        a.calculate_fitness()
-            .partial_cmp(&b.calculate_fitness())
-            .unwrap()
-    });
-}
-
-// Learn pattern matching, find principle reason to use if let (matching one specific pattern actually)
+/// Iterates over input and calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 /// For each member in population, compare to its neighbors' fitness scores. The best two out of the three replace the current.
-pub fn evolve(population: &mut [impl Organism]) {
+pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let scores = population
         .iter()
         .map(|element| element.calculate_fitness())
         .collect::<Vec<f64>>();
 
     for i in 0..population.len() - 2 {
-        if let [previous, current, next] = &mut population[i..] {
+        if let [previous, current, next, ..] = &mut population[i..] {
             let mate = {
                 if scores[i] > scores[i+2] {
                     previous
@@ -74,11 +27,14 @@ pub fn evolve(population: &mut [impl Organism]) {
                     next
                 }
             };
-
+            
             current.mate(mate);
-            current.mutate();
         }
     }
+
+    population
+        .par_iter_mut()
+        .for_each(|item| item.mutate());
 }
 
 // Referring to test.rs for separate tests file.
