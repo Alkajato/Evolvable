@@ -11,7 +11,6 @@ pub trait Organism {
 }
 
 /// Iterates over input and calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
-/// For each member in population, compare to its neighbors' fitness scores. The best two out of the three replace the current.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let scores = population
         .iter()
