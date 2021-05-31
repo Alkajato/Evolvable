@@ -11,26 +11,26 @@ pub trait Organism {
 }
 
 /// Iterates over input and calls calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
-pub fn evolve(population: &mut [impl Organism]) {
-    let (bottom, top) = population.split_at_mut(population.len() / 2); // Continually splitting_at_mut was 3.07 times slower than splitting once.
+// pub fn evolve(population: &mut [impl Organism]) {
+//     let (bottom, top) = population.split_at_mut(population.len() / 2); // Continually splitting_at_mut was 3.07 times slower than splitting once.
 
-    let mut rng = thread_rng();
-    let range = Uniform::from(0..top.len()); // Using a range to sample from is approximately 13.43% faster.
+//     let mut rng = thread_rng();
+//     let range = Uniform::from(0..top.len()); // Using a range to sample from is approximately 13.43% faster.
 
-    for elem in bottom {
-        let mate = &top[range.sample(&mut rng)];
+//     for elem in bottom {
+//         let mate = &top[range.sample(&mut rng)];
 
-        elem.mate(mate);
-        elem.mutate();
-    }
+//         elem.mate(mate);
+//         elem.mutate();
+//     }
 
-    // Really want this to work with sort_by_cached_key instead.
-    population.sort_unstable_by(|a, b| {
-        a.calculate_fitness()
-            .partial_cmp(&b.calculate_fitness())
-            .unwrap()
-    });
-}
+//     // Really want this to work with sort_by_cached_key instead.
+//     population.sort_unstable_by(|a, b| {
+//         a.calculate_fitness()
+//             .partial_cmp(&b.calculate_fitness())
+//             .unwrap()
+//     });
+// }
 
 // Get par_evolve() to eventually use evolve(), test if evolve() is better than cellular genetic algorithm.
 /// Multiple cores iterate over input and call calculate_fitness(), cross_over(), then mutate() accordingly to improve overall fitness.
@@ -59,7 +59,7 @@ pub fn par_evolve<T: Organism + Send + Sync>(population: &mut [T]) {
 
 // Learn pattern matching, find principle reason to use if let (matching one specific pattern actually)
 /// For each member in population, compare to its neighbors' fitness scores. The best two out of the three replace the current.
-pub fn cellular_evolve<T: Organism>(population: &mut [T]) {
+pub fn evolve(population: &mut [impl Organism]) {
     let scores = population
         .iter()
         .map(|element| element.calculate_fitness())

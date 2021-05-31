@@ -2,7 +2,6 @@ use rand::{thread_rng, Rng};
 
 use crate::evolve;
 use crate::par_evolve;
-use crate::cellular_evolve;
 use crate::Organism;
 
 use self::test_file_writer::StopWatch;
@@ -76,8 +75,6 @@ fn test_evolve() {
         evolve(&mut population);
 
         writer.lap();
-
-        assert!(population[POP_SIZE - 1].fitness > population[0].fitness);
     }
 
     writer.make_results("time_evolve().txt");
@@ -106,27 +103,4 @@ fn test_par_evolve() {
     }
 
     writer.make_results("time_par_evolve().txt");
-}
-
-#[test]
-fn test_cellular_evolve() {
-    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-
-    let previous_average = get_average(&population);
-    par_evolve(&mut population);
-    let current_average = get_average(&population);
-
-    assert!(current_average >= previous_average);
-
-    let mut writer = StopWatch::new();
-
-    for _ in ITERATIONS {
-        writer.start();
-
-        cellular_evolve(&mut population);
-
-        writer.lap();
-    }
-
-    writer.make_results("time_cellular_evolve().txt");
 }
