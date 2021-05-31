@@ -41,11 +41,7 @@ fn make_ev_nums(size: usize) -> Vec<EvNum> {
 }
 
 fn get_average(population: &[impl Organism]) -> f64 {
-    let average: f64 = population
-        .iter()
-        .map(|item| item.calculate_fitness())
-        .sum();
-
+    let average: f64 = population.iter().map(|item| item.calculate_fitness()).sum();
     average / (population.len() as f64)
 }
 

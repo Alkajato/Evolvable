@@ -1,4 +1,3 @@
-use rand::{distributions::Uniform, prelude::Distribution, thread_rng};
 use rayon::prelude::*;
 
 pub trait Organism {
@@ -20,20 +19,18 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
             let mate = {
-                if scores[i] > scores[i+2] {
+                if scores[i] > scores[i + 2] {
                     previous
                 } else {
                     next
                 }
             };
-            
+
             current.mate(mate);
         }
     }
 
-    population
-        .par_iter_mut()
-        .for_each(|item| item.mutate());
+    population.par_iter_mut().for_each(|item| item.mutate());
 }
 
 // Referring to test.rs for separate tests file.
