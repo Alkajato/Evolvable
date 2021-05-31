@@ -30,6 +30,7 @@ impl Organism for EvNum {
 
 fn make_ev_nums(size: usize) -> Vec<EvNum> {
     let mut population: Vec<EvNum> = Vec::with_capacity(size);
+
     for _ in 0..size {
         population.push(EvNum {
             fitness: thread_rng().gen::<f64>(),
@@ -40,14 +41,10 @@ fn make_ev_nums(size: usize) -> Vec<EvNum> {
 }
 
 fn get_average(population: &[impl Organism]) -> f64 {
-    let mut average = 0.0;
-    for each in population {
-        if average == 0.0 {
-            average = each.calculate_fitness();
-        }
-
-        average += each.calculate_fitness();
-    }
+    let average: f64 = population
+        .iter()
+        .map(|item| item.calculate_fitness())
+        .sum();
 
     average / (population.len() as f64)
 }
@@ -63,7 +60,12 @@ fn test_evolve() {
     evolve(&mut population);
     let current_average = get_average(&population);
 
-    assert!(current_average > previous_average, "C_Avg: {}, P_Avg: {}", current_average, previous_average);
+    assert!(
+        current_average > previous_average,
+        "C_Avg: {}, P_Avg: {}",
+        current_average,
+        previous_average
+    );
 
     let mut writer = StopWatch::new();
     for _ in ITERATIONS {
