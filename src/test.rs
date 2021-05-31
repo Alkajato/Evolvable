@@ -1,9 +1,7 @@
 use rand::{thread_rng, Rng};
 
-
 use crate::evolve;
 use crate::par_evolve;
-use crate::best_two;
 use crate::Organism;
 
 use self::test_file_writer::StopWatch;
@@ -19,8 +17,8 @@ impl Organism for EvNum {
         self.fitness
     }
 
-    fn cross_over(&mut self, parent1: &EvNum, parent2: &EvNum) {
-        self.fitness = (parent1.fitness + parent2.fitness) / 2.0;
+    fn mate(&mut self, mate: &EvNum) {
+        self.fitness = (mate.fitness + self.fitness) / 2.0;
     }
 
     fn mutate(&mut self) {
@@ -34,7 +32,9 @@ impl Organism for EvNum {
 fn make_ev_nums(size: usize) -> Vec<EvNum> {
     let mut population: Vec<EvNum> = Vec::with_capacity(size);
     for _ in 0..size {
-        population.push(EvNum { fitness: INITIAL_FITNESS_SCORE });
+        population.push(EvNum {
+            fitness: INITIAL_FITNESS_SCORE,
+        });
     }
 
     population
@@ -60,7 +60,7 @@ const POP_SIZE: usize = 5_000_000;
 #[test]
 fn test_evolve() {
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-    
+
     let previous_average = get_average(&population);
     evolve(&mut population);
     let current_average = get_average(&population);
@@ -70,7 +70,7 @@ fn test_evolve() {
     // Benchmarking and writing to file.
     // TODO: Print average % improved each generation.
     let mut writer = StopWatch::new();
-    
+
     for _ in ITERATIONS {
         writer.start();
 
@@ -87,7 +87,7 @@ fn test_evolve() {
 #[test]
 fn test_par_evolve() {
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-    
+
     let previous_average = get_average(&population);
     par_evolve(&mut population);
     let current_average = get_average(&population);
@@ -107,25 +107,4 @@ fn test_par_evolve() {
     }
 
     writer.make_results("time_par_evolve().txt");
-}
-
-#[test]
-fn test_best_two() {
-    let mut array = make_ev_nums(3);
-    array[0].fitness = 0.0;
-    array[1].fitness = 5.0;
-    array[2].fitness = 6.0;
-
-    let (one, two) = best_two(&array);
-    assert!(one.fitness != array[0].fitness);
-    assert!(two.fitness != array[0].fitness);
-    assert!(one.fitness != two.fitness);
-
-    array[0].fitness = 0.0;
-    array[1].fitness = 6.0;
-    array[2].fitness = 6.0;
-
-    let (one, two) = best_two(&array);
-    assert!(one.fitness != array[0].fitness);
-    assert!(two.fitness != array[0].fitness);
 }
