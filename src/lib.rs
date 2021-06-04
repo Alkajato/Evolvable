@@ -15,10 +15,11 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         .par_iter()
         .map(|element| element.calculate_fitness())
         .collect::<Vec<f64>>();
+    let average: f64 = scores.iter().sum::<f64>() / population.len() as f64;
 
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
-            if scores[i] >= scores[i + 1] || scores[i + 1] <= scores[i + 2] { // Important not to mate if there's no better neighbors.
+            if scores[i + 1] < average { // Only replace if current is under average.
                 let mate = {
                     if scores[i] > scores[i + 2] {
                         previous
