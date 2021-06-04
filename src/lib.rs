@@ -12,25 +12,26 @@ pub trait Organism {
 /// Iterates over input and calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let scores = population
-        .iter()
+        .par_iter()
         .map(|element| element.calculate_fitness())
         .collect::<Vec<f64>>();
 
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
-            let mate = {
-                if scores[i] > scores[i + 2] {
-                    previous
-                } else {
-                    next
-                }
-            };
+            if scores[i] >= scores[i + 1] || scores[i + 1] <= scores[i + 2] { // Important not to mate if there's no better neighbors.
+                let mate = {
+                    if scores[i] > scores[i + 2] {
+                        previous
+                    } else {
+                        next
+                    }
+                };
 
-            current.mate(mate);
+                current.mate(mate);
+                current.mutate();
+            }
         }
     }
-
-    population.par_iter_mut().for_each(|item| item.mutate());
 }
 
 // Referring to test.rs for separate tests file.
