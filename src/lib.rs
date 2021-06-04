@@ -20,19 +20,25 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
             if scores[i + 1] <= average { // Only replace if current is under or equal average.
-                let mate = {
+                current.mate(
                     if scores[i] > scores[i + 2] {
                         previous
                     } else {
                         next
                     }
-                };
-
-                current.mate(mate);
-                current.mutate();
+                );
             }
         }
     }
+
+    population
+        .par_iter_mut()
+        .zip(scores)
+        .for_each(|(item, score)| {
+            if score <= average {
+                item.mutate();
+            }
+        });
 }
 
 // Referring to test.rs for separate tests file.
