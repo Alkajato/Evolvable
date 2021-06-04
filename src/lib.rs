@@ -9,7 +9,7 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
-/// Iterates over input and calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
+/// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let scores = population
         .par_iter()
@@ -17,19 +17,21 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         .collect::<Vec<f64>>();
     let average: f64 = scores.iter().sum::<f64>() / population.len() as f64;
 
+    population.swap(0, 1);
+
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
             if scores[i + 1] <= average { // Only replace if current is under or equal average.
-                current.mate(
-                    if scores[i] > scores[i + 2] {
-                        previous
-                    } else {
-                        next
-                    }
-                );
+                current.mate(if scores[i] > scores[i + 2] {
+                    previous
+                } else {
+                    next
+                });
             }
         }
     }
+
+    population.swap(0, population.len());
 
     population
         .par_iter_mut()
