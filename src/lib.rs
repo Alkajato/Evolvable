@@ -17,11 +17,10 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         .collect::<Vec<f64>>();
     let average: f64 = scores.iter().sum::<f64>() / population.len() as f64;
 
-    population.swap(0, 1);
-
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
-            if scores[i + 1] <= average { // Only replace if current is under or equal average.
+            if scores[i + 1] <= average {
+                // Only replace if current is under or equal average.
                 current.mate(if scores[i] > scores[i + 2] {
                     previous
                 } else {
@@ -31,8 +30,6 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         }
     }
 
-    population.swap(0, population.len());
-
     population
         .par_iter_mut()
         .zip(scores)
@@ -41,6 +38,8 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
                 item.mutate();
             }
         });
+
+    population.swap(0, population.len() - 1);
 }
 
 // Referring to test.rs for separate tests file.
