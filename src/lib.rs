@@ -19,17 +19,13 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
 
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
-            let mut state = false;
-
-            if scores[i] > scores[i + 1] {
+            if scores[i] >= scores[i + 1] {
                 current.mate(previous);
-                state = true;
-            } else if scores[i + 1] < scores[i + 2] {
+                mated[i + 1] = true;
+            } else if scores[i + 1] <= scores[i + 2] {
                 current.mate(next);
-                state = true;
+                mated[i + 1] = true;
             }
-
-            mated[i + 1] = state;
         }
     }
 
