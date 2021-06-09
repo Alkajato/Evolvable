@@ -38,8 +38,9 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
                 item.mutate();
             }
         });
-
-    population.swap(0, population.len() - 1);
+    
+    population.swap(0, 1);
+    population.swap(population.len() - 1, population.len() - 2);
 }
 
 // Referring to test.rs for separate tests file.
