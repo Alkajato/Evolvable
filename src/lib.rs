@@ -12,7 +12,7 @@ pub trait Organism {
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let mut mated: Vec<bool> = vec![false; population.len()];
-
+    
     for i in 0..population.len() - 2 {
         if let [previous, current, next, ..] = &mut population[i..] {
             let current_score = current.calculate_fitness();
@@ -35,9 +35,9 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
                 item.mutate();
             }
         });
-    
-    population.swap(0, 1);
-    population.swap(population.len() - 1, population.len() - 2);
+
+    population.swap(0, population.len() - 2);
+    population.swap(population.len() - 1, 1);
 }
 
 // Referring to test.rs for separate tests file.
