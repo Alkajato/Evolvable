@@ -11,20 +11,35 @@ pub trait Organism {
 
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
-    let mut mated: Vec<bool> = vec![false; population.len()];
+    let len = population.len();
+    let mut mated: Vec<bool> = vec![false; len];
     
-    for i in 0..population.len() - 2 {
-        if let [previous, current, next, ..] = &mut population[i..] {
-            let current_score = current.calculate_fitness();
+    let mut work  = |index: usize, behind: &mut T, current: &mut T, after: &mut T| {
+        let current_score = current.calculate_fitness();
 
-            if previous.calculate_fitness() >= current_score {
-                current.mate(&previous);
-                mated[i + 1] = true;
-            } else if current_score <= next.calculate_fitness() {
-                current.mate(&next);
-                mated[i + 1] = true;
-            }
+        if behind.calculate_fitness() >= current_score {
+            current.mate(&behind);
+            mated[index] = true;
+        } else if current_score <= after.calculate_fitness() {
+            current.mate(&after);
+            mated[index] = true;
         }
+    };
+
+    // The first member mates with member infront, and the last member.
+    if let [current, second, .., last] = &mut population[..]  {
+        work(0, last, current, second);
+    }
+
+    for i in 0..len - 2 {
+        if let [previous, current, next, ..] = &mut population[i..] {
+            work(i, previous, current, next);
+        }
+    }
+
+    // The last member mates with member behind, and the first member.
+    if let [first, .., behind, current] = &mut population[..]  {
+        work(len - 1, behind, current, first);
     }
 
     population
@@ -36,8 +51,8 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
             }
         });
 
-    population.swap(0, population.len() - 2);
-    population.swap(population.len() - 1, 1);
+    // population.swap(0, population.len() - 2);
+    // population.swap(population.len() - 1, 1);
 }
 
 // Referring to test.rs for separate tests file.
