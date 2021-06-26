@@ -13,35 +13,14 @@ pub trait Organism {
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let len = population.len();
     let mut mated: Vec<bool> = vec![false; len];
-    let mut scores: Vec<f64> = vec![0.0; len];
-
-    population
-        .par_iter_mut()
-        .zip(&mut scores)
-        .for_each(|(element, score)| {
-            *score = element.calculate_fitness();
-        });
 
     let mut work = |index: usize, behind: &mut T, current: &mut T, after: &mut T| {
-        let behind_score: f64 = if index == 0 {
-            scores[len - 1]
-        } else {
-            scores[index - 1]
-        };
+        let current_score = current.calculate_fitness();
 
-        let current_score: f64 = scores[index];
-
-        let after_score: f64 = if index == len - 1 {
-            scores[0]
-        } else {
-            scores[index + 1]
-        };
-
-
-        if behind_score >= current_score {
+        if behind.calculate_fitness() >= current_score {
             current.mate(&behind);
             mated[index] = true;
-        } else if current_score <= after_score {
+        } else if current_score <= after.calculate_fitness() {
             current.mate(&after);
             mated[index] = true;
         }
