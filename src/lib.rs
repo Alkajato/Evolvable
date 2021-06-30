@@ -31,7 +31,7 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         work(0, last, current, second);
     }
 
-    for i in 0..len - 2 {
+    for i in 1..len - 1 {
         if let [previous, current, next, ..] = &mut population[i..] {
             work(i, previous, current, next);
         }
