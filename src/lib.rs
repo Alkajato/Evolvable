@@ -12,44 +12,39 @@ pub trait Organism {
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let len = population.len();
-    let mut mated: Vec<bool> = vec![false; len];
-
-    let mut work = |index: usize, behind: &mut T, current: &mut T, after: &mut T| {
-        let current_score = current.calculate_fitness();
-
-        if behind.calculate_fitness() >= current_score {
-            current.mate(&behind);
-            mated[index] = true;
-        } else if current_score <= after.calculate_fitness() {
-            current.mate(&after);
-            mated[index] = true;
-        }
-    };
-
-    // The first member mates with member infront, and the last member.
-    if let [current, second, .., last] = &mut population[..] {
-        work(0, last, current, second);
-    }
+    let mut mated = vec![false; len];
+    let scores: Vec<f64> = population
+        .par_iter_mut()
+        .map(|item| item.calculate_fitness())
+        .collect();
 
     for i in 1..len - 1 {
-        if let [previous, current, next, ..] = &mut population[i..] {
-            work(i, previous, current, next);
-        }
-    }
+        let before = i - 1;
+        let after = i + 1;
 
-    // The last member mates with member behind, and the first member.
-    if let [first, .., behind, current] = &mut population[..] {
-        work(len - 1, behind, current, first);
+        if scores[before] >= scores[i] && scores[i] <= scores[after] {
+            if let [prev, current, next, ..] = &mut population[before..] {
+                mated[i] = true;
+                if scores[before] > scores[after] {
+                    current.mate(&prev);
+                } else {
+                    current.mate(&next);
+                }
+            }
+        }
     }
 
     population
         .par_iter_mut()
         .zip(mated)
-        .for_each(|(item, reproduced)| {
-            if reproduced {
+        .for_each(|(item, mated)| {
+            if mated {
                 item.mutate();
             }
         });
+
+    population.swap(0, 1);
+    population.swap(len - 1, len - 2);
 }
 
 // Referring to test.rs for separate tests file.
