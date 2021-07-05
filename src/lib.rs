@@ -50,16 +50,16 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
 
 /// Returns the best Organism struct from Population.
 pub fn get_best<T: Organism>(population: &[T]) -> &T {
-    let (mut best, mut best_score) = (0, -f64::INFINITY);
-    for (i, each) in population.iter().enumerate() {
-        let current = each.calculate_fitness();
-        if current > best_score {
-            best = i;
-            best_score = current;
-        }
-    }
-
-    &population[best]
+    population
+        .iter()
+        .reduce(|one, two| {
+            if one.calculate_fitness() > two.calculate_fitness() {
+                one
+            } else {
+                two
+            }
+        })
+        .unwrap()
 }
 
 // Referring to test.rs for separate tests file.
