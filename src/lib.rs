@@ -19,8 +19,7 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
         .collect();
 
     for i in 1..len - 1 {
-        let before = i - 1;
-        let after = i + 1;
+        let (before, after) = (i - 1, i + 1);
 
         if scores[before] >= scores[i] && scores[i] <= scores[after] {
             if let [prev, current, next, ..] = &mut population[before..] {
@@ -49,7 +48,7 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
 }
 
 /// Returns the best Organism struct from Population.
-pub fn get_best<T: Organism>(population: &[T]) -> &T {
+pub fn get_best<T: Organism + Send + Sync>(population: &[T]) -> &T {
     population
         .iter()
         .reduce(|one, two| {
@@ -59,7 +58,7 @@ pub fn get_best<T: Organism>(population: &[T]) -> &T {
                 two
             }
         })
-        .unwrap()
+        .expect("Population failed to yield best from get_best()")
 }
 
 // Referring to test.rs for separate tests file.
