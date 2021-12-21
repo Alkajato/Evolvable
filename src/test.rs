@@ -1,4 +1,5 @@
 use rand::{thread_rng, Rng};
+use std::fmt;
 
 use crate::evolve;
 use crate::Organism;
@@ -17,14 +18,24 @@ impl Organism for EvNum {
     }
 
     fn mate(&mut self, mate: &EvNum) {
+        // self.fitness = mate.fitness;
         self.fitness = (mate.fitness + self.fitness) / 2.0;
     }
 
     fn mutate(&mut self) {
-        let max = 50.0;
+        let mut rng = thread_rng();
+        if rng.gen::<f64>() >= 0.2 {
+            let max = 0.5;
 
-        let value: f64 = thread_rng().gen_range(-max..max);
-        self.fitness += value;
+            let value: f64 = rng.gen_range(-max..max);
+            self.fitness += value;
+        }
+    }
+}
+
+impl fmt::Display for EvNum {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.fitness)
     }
 }
 
@@ -41,20 +52,26 @@ fn make_ev_nums(size: usize) -> Vec<EvNum> {
 }
 
 fn get_average(population: &[impl Organism]) -> f64 {
-    let average: f64 = population.iter().map(|item| item.calculate_fitness()).sum();
-    average / (population.len() as f64)
+    let sum: f64 = population.iter().map(|item| item.calculate_fitness()).sum();
+    sum / (population.len() as f64)
 }
 
 const ITERATIONS: std::ops::Range<i32> = 0..12;
-const POP_SIZE: usize = 5_000_000;
+const POP_SIZE: usize = 5_000_000; // Normal value is 5_000_000
 
 #[test]
 fn test_evolve() {
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
 
+    // population.iter().for_each(|member| print!("{} ", member));
+    // println!("");
+
     let previous_average = get_average(&population);
     evolve(&mut population);
     let current_average = get_average(&population);
+
+    // population.iter().for_each(|member| print!("{} ", member));
+    // println!("");
 
     assert!(
         current_average > previous_average,

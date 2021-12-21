@@ -9,26 +9,73 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
+/// Returns the indices before and after index in items--loops around if out of bounds.
+fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
+    let mut indices = (index - 1, index + 1);
+
+    if index == 0 {
+        indices.0 = items.len() - 1;
+    }
+
+    if index == items.len() - 1 {
+        indices.1 = 0;
+    }
+
+    (indices.0, indices.1)
+}
+
+/// Returns three references from items, left, center, and right of `items[index]`.
+/// Loops around if `index == 0` or `index == items.len() - 1`
+fn get_three<T>(items: &mut [T], index: usize) -> (&T, &mut T, &T) {
+    if index == 0 {
+        let (behind, ahead) = items.split_at_mut(1);
+
+        (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0])
+    } else if index == items.len() - 1 {
+        let (behind, ahead) = items.split_at_mut(index);
+
+        (&behind[behind.len() - 1], &mut ahead[0], &behind[0])
+    } else {
+        let (behind, ahead) = items.split_at_mut(index);
+        let (center, ahead) = ahead.split_at_mut(1);
+
+        (&behind[behind.len() - 1], &mut center[0], &ahead[0])
+    }
+}
+
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     let len = population.len();
-    let mut mated = vec![false; len];
+
     let scores: Vec<f64> = population
-        .par_iter_mut()
+        .par_iter()
         .map(|item| item.calculate_fitness())
         .collect();
 
-    for i in 1..len - 1 {
-        let (before, after) = (i - 1, i + 1);
+    let mated: Vec<bool> = scores
+        .par_iter()
+        .enumerate()
+        .map(|(index, current_score)| {
+            let (prev_score, next_score) = get_neighbors(&scores, index);
 
-        if scores[before] >= scores[i] && scores[i] <= scores[after] {
-            if let [prev, current, next, ..] = &mut population[before..] {
-                mated[i] = true;
-                if scores[before] > scores[after] {
-                    current.mate(&prev);
-                } else {
-                    current.mate(&next);
-                }
+            if current_score <= &scores[prev_score] && current_score <= &scores[next_score] {
+                true
+            } else {
+                false
+            }
+        })
+        .collect();
+
+    for i in 0..len {
+        if mated[i] {
+            let (before, after) = get_neighbors(&scores, i);
+            debug_assert!(i < len, "i: {}, len: {}", i, len);
+
+            let (behind, current, ahead) = get_three(population, i);
+            if scores[before] > scores[after] {
+                current.mate(behind);
+            } else {
+                current.mate(ahead);
             }
         }
     }
@@ -41,17 +88,13 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
                 item.mutate();
             }
         });
-
-    // We swap because otherwise the first and last member will be left out.
-    population.swap(0, 1);
-    population.swap(len - 1, len - 2);
 }
 
 /// Returns the best Organism struct from Population.
 pub fn get_best<T: Organism + Send + Sync>(population: &[T]) -> &T {
     population
-        .iter()
-        .reduce(|one, two| {
+        .par_iter()
+        .reduce_with(|one, two| {
             if one.calculate_fitness() > two.calculate_fitness() {
                 one
             } else {
