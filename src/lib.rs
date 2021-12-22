@@ -69,7 +69,6 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
     for i in 0..len {
         if mated[i] {
             let (before, after) = get_neighbors(&scores, i);
-            debug_assert!(i < len, "i: {}, len: {}", i, len);
 
             let (behind, current, ahead) = get_three(population, i);
             if scores[before] > scores[after] {
