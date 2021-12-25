@@ -21,7 +21,7 @@ fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
         indices.1 = 0;
     }
 
-    (indices.0, indices.1)
+    indices
 }
 
 /// Returns three references from items, left, center, and right of `items[index]`.
