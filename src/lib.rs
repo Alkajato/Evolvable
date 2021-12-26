@@ -9,51 +9,51 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
-/// Returns the indices before and after index in items--loops around if out of bounds.
-fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
-    let mut indices = (index - 1, index + 1);
-
-    if index == 0 {
-        indices.0 = items.len() - 1;
-    }
-
-    if index == items.len() - 1 {
-        indices.1 = 0;
-    }
-
-    indices
-}
-
-/// Returns three references from items, left, center, and right of `items[index]`.
-/// Loops around if `index == 0` or `index == items.len() - 1`
-fn get_three<T>(items: &mut [T], index: usize) -> (&T, &mut T, &T) {
-    if index == 0 {
-        let (behind, ahead) = items.split_at_mut(1);
-
-        (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0])
-    } else if index == items.len() - 1 {
-        let (behind, ahead) = items.split_at_mut(index);
-
-        (&behind[behind.len() - 1], &mut ahead[0], &behind[0])
-    } else {
-        let (behind, ahead) = items.split_at_mut(index);
-        let (center, ahead) = ahead.split_at_mut(1);
-
-        (&behind[behind.len() - 1], &mut center[0], &ahead[0])
-    }
-}
-
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
-pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
+fn process<T: Organism + Send + Sync>(population: &mut [T]) {
+    /// Returns the indices before and after index in items--loops around if out of bounds.
+    fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
+        let mut indices = (index - 1, index + 1);
+
+        if index == 0 {
+            indices.0 = items.len() - 1;
+        }
+
+        if index == items.len() - 1 {
+            indices.1 = 0;
+        }
+
+        indices
+    }
+
+    /// Returns three references from items, left, center, and right of `items[index]`.
+    /// Loops around if `index == 0` or `index == items.len() - 1`
+    fn get_three<T>(items: &mut [T], index: usize) -> (&T, &mut T, &T) {
+        if index == 0 {
+            let (behind, ahead) = items.split_at_mut(1);
+
+            (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0])
+        } else if index == items.len() - 1 {
+            let (behind, ahead) = items.split_at_mut(index);
+
+            (&behind[behind.len() - 1], &mut ahead[0], &behind[0])
+        } else {
+            let (behind, ahead) = items.split_at_mut(index);
+            let (center, ahead) = ahead.split_at_mut(1);
+
+            (&behind[behind.len() - 1], &mut center[0], &ahead[0])
+        }
+    }
+
     let len = population.len();
 
     let scores: Vec<f64> = population
-        .par_iter()
+        .iter()
         .map(|item| item.calculate_fitness())
         .collect();
 
     let mated: Vec<bool> = scores
-        .par_iter()
+        .iter()
         .enumerate()
         .map(|(index, current_score)| {
             let (prev_score, next_score) = get_neighbors(&scores, index);
@@ -76,17 +76,32 @@ pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
             } else {
                 current.mate(ahead);
             }
+
+            current.mutate();
         }
     }
+}
 
-    population
-        .par_iter_mut()
-        .zip(mated)
-        .for_each(|(item, mated)| {
-            if mated {
-                item.mutate();
-            }
-        });
+/// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
+pub fn evolve<T: Organism + Send + Sync>(population: &mut [T]) {
+    let cores = num_cpus::get();
+
+    let mut splits: Vec<&mut [T]> = vec![population];
+    for _ in 0..cores / 2 {
+        let mut temp = Vec::new();
+
+        for each in splits {
+            let (one, two) = each.split_at_mut(each.len() / 2);
+            temp.push(one);
+            temp.push(two);
+        }
+
+        splits = temp;
+    }
+
+    splits.par_iter_mut().for_each(|item| process(*item));
+    // Due to splitting_at_mut, genes would not travel across the entire slice without rotation.
+    population.rotate_left(1);
 }
 
 /// Returns the best Organism struct from Population.
