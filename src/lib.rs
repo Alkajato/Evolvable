@@ -91,11 +91,12 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
                 } else {
                     current.mate(ahead);
                 }
-
-                current.mutate();
             }
         }
     });
+
+    input.par_iter_mut().for_each(|item| item.mutate());
+
     // Due to splitting_at_mut, genes would not travel across the entire slice without rotation.
     input.rotate_left(1);
 }
