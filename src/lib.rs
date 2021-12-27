@@ -11,17 +11,15 @@ pub trait Organism {
 
 /// Returns the indices before and after index in items--loops around if out of bounds.
 fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
-    let mut indices = (index - 1, index + 1);
-
     if index == 0 {
-        indices.0 = items.len() - 1;
+        return (items.len() - 1, index + 1);
     }
 
     if index == items.len() - 1 {
-        indices.1 = 0;
+        return (index - 1, 0);
     }
 
-    indices
+    (index - 1, index + 1)
 }
 
 /// Returns three references from items, left, center, and right of `items[index]`.
