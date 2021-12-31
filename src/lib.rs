@@ -9,32 +9,31 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
-/// Returns the indices before and after index in items--loops around if out of bounds.
-fn get_neighbors<T>(items: &[T], index: usize) -> (usize, usize) {
+/// Returns the indices before and after index in input--loops around if out of bounds.
+fn get_neighbors<T>(input: &[T], index: usize) -> (usize, usize) {
     if index == 0 {
-        return (items.len() - 1, index + 1);
+        return (input.len() - 1, index + 1);
     }
 
-    if index == items.len() - 1 {
+    if index == input.len() - 1 {
         return (index - 1, 0);
     }
 
     (index - 1, index + 1)
 }
 
-/// Returns three references from items, left, center, and right of `items[index]`.
-/// Loops around if `index == 0` or `index == items.len() - 1`
-fn get_three<T>(items: &mut [T], index: usize) -> (&T, &mut T, &T) {
+/// Returns three references from input, left, center, and right of `items[index]`.
+fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
     if index == 0 {
-        let (behind, ahead) = items.split_at_mut(1);
+        let (behind, ahead) = input.split_at_mut(1);
 
         (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0])
-    } else if index == items.len() - 1 {
-        let (behind, ahead) = items.split_at_mut(index);
+    } else if index == input.len() - 1 {
+        let (behind, ahead) = input.split_at_mut(index);
 
         (&behind[behind.len() - 1], &mut ahead[0], &behind[0])
     } else {
-        let (behind, ahead) = items.split_at_mut(index);
+        let (behind, ahead) = input.split_at_mut(index);
         let (center, ahead) = ahead.split_at_mut(1);
 
         (&behind[behind.len() - 1], &mut center[0], &ahead[0])
@@ -43,61 +42,37 @@ fn get_three<T>(items: &mut [T], index: usize) -> (&T, &mut T, &T) {
 
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
-    // Make cores number of splits on input to process in parallel.
-    let cores = num_cpus::get();
+    // Do the work that can be work-stealed easily using rayon.
+    let scores: Vec<f64> = input
+        .par_iter()
+        .map(|item| item.calculate_fitness())
+        .collect();
 
-    let mut splits: Vec<&mut [T]> = vec![input];
-    for _ in 0..cores / 2 {
-        let mut temp = Vec::new();
+    // Split the input evenly to work on in parallel.
+    let chunk_size = input.len() / num_cpus::get();
 
-        for each in splits {
-            let (one, two) = each.split_at_mut(each.len() / 2);
-            temp.push(one);
-            temp.push(two);
-        }
+    input
+        .par_chunks_mut(chunk_size)
+        .zip(scores.par_chunks(chunk_size))
+        .for_each(|(chunk, scores)| {
+            let len = chunk.len();
 
-        splits = temp;
-    }
-
-    splits.par_iter_mut().for_each(|population| {
-        let len = population.len();
-
-        let scores: Vec<f64> = population
-            .iter()
-            .map(|item| item.calculate_fitness())
-            .collect();
-
-        let mated: Vec<bool> = scores
-            .iter()
-            .enumerate()
-            .map(|(index, current_score)| {
-                let (prev_score, next_score) = get_neighbors(&scores, index);
-
-                if current_score <= &scores[prev_score] && current_score <= &scores[next_score] {
-                    true
-                } else {
-                    false
-                }
-            })
-            .collect();
-
-        for i in 0..len {
-            if mated[i] {
+            for i in 0..len {
                 let (before, after) = get_neighbors(&scores, i);
 
-                let (behind, current, ahead) = get_three(*population, i);
+                let (behind, current, ahead) = get_three(chunk, i);
                 if scores[before] > scores[after] {
                     current.mate(behind);
                 } else {
                     current.mate(ahead);
                 }
             }
-        }
-    });
+        });
 
+    // Do mutations using rayon to take advantage of the work-stealing algorithm.
     input.par_iter_mut().for_each(|item| item.mutate());
 
-    // Due to splitting_at_mut, genes would not travel across the entire slice without rotation.
+    // Since iterating over chunks do not overlap, genes would not travel across the entire slice without rotation.
     input.rotate_left(1);
 }
 
