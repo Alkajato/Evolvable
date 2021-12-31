@@ -59,12 +59,13 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
 
             for i in 0..len {
                 let (before, after) = get_neighbors(&scores, i);
-
-                let (behind, current, ahead) = get_three(chunk, i);
-                if scores[before] > scores[after] {
-                    current.mate(behind);
-                } else {
-                    current.mate(ahead);
+                if scores[i] <= scores[before] && scores[i] <= scores[after] {
+                    let (behind, current, ahead) = get_three(chunk, i);
+                    if scores[before] > scores[after] {
+                        current.mate(behind);
+                    } else {
+                        current.mate(ahead);
+                    }
                 }
             }
         });
