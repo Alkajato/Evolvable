@@ -42,7 +42,6 @@ fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
 
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
-    // Do the work that can be work-stealed easily using rayon.
     let scores: Vec<f64> = input
         .par_iter()
         .map(|item| item.calculate_fitness())
@@ -61,17 +60,17 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
                 let (before, after) = get_neighbors(&scores, i);
                 if scores[i] <= scores[before] && scores[i] <= scores[after] {
                     let (behind, current, ahead) = get_three(chunk, i);
+                    
                     if scores[before] > scores[after] {
                         current.mate(behind);
                     } else {
                         current.mate(ahead);
                     }
+
+                    current.mutate();
                 }
             }
         });
-
-    // Do mutations using rayon to take advantage of the work-stealing algorithm.
-    input.par_iter_mut().for_each(|item| item.mutate());
 
     // Since iterating over chunks do not overlap, genes would not travel across the entire slice without rotation.
     input.rotate_left(1);
