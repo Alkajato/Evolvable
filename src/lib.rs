@@ -9,19 +9,6 @@ pub trait Organism {
     fn mutate(&mut self);
 }
 
-/// Returns the indices before and after index in input--loops around if out of bounds.
-fn get_neighbors<T>(input: &[T], index: usize) -> (usize, usize) {
-    if index == 0 {
-        return (input.len() - 1, index + 1);
-    }
-
-    if index == input.len() - 1 {
-        return (index - 1, 0);
-    }
-
-    (index - 1, index + 1)
-}
-
 /// Returns three references from input, left, center, and right of `items[index]`.
 fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
     if index == 0 {
@@ -42,7 +29,7 @@ fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
 
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
-    let scores: Vec<f64> = input
+    let mut scores: Vec<f64> = input
         .par_iter()
         .map(|item| item.calculate_fitness())
         .collect();
@@ -52,16 +39,17 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
 
     input
         .par_chunks_mut(chunk_size)
-        .zip(scores.par_chunks(chunk_size))
+        .zip(scores.par_chunks_mut(chunk_size))
         .for_each(|(chunk, scores)| {
             let len = chunk.len();
 
             for i in 0..len {
-                let (before, after) = get_neighbors(&scores, i);
-                if scores[i] <= scores[before] && scores[i] <= scores[after] {
+                let (previous_score, current_score, next_score) = get_three(scores,i);
+
+                if *current_score <= *previous_score && *current_score <= *next_score {
                     let (behind, current, ahead) = get_three(chunk, i);
-                    
-                    if scores[before] > scores[after] {
+
+                    if previous_score > next_score {
                         current.mate(behind);
                     } else {
                         current.mate(ahead);
