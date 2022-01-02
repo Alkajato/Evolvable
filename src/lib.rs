@@ -14,17 +14,19 @@ fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
     if index == 0 {
         let (behind, ahead) = input.split_at_mut(1);
 
-        (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0])
-    } else if index == input.len() - 1 {
-        let (behind, ahead) = input.split_at_mut(index);
-
-        (&behind[behind.len() - 1], &mut ahead[0], &behind[0])
-    } else {
-        let (behind, ahead) = input.split_at_mut(index);
-        let (center, ahead) = ahead.split_at_mut(1);
-
-        (&behind[behind.len() - 1], &mut center[0], &ahead[0])
+        return (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0]);
     }
+
+    if index == input.len() - 1 {
+        let (behind, ahead) = input.split_at_mut(index);
+
+        return (&behind[behind.len() - 1], &mut ahead[0], &behind[0]);
+    }
+
+    let (behind, ahead) = input.split_at_mut(index);
+    let (center, ahead) = ahead.split_at_mut(1);
+
+    return (&behind[behind.len() - 1], &mut center[0], &ahead[0]);
 }
 
 /// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
@@ -44,7 +46,7 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
             let len = chunk.len();
 
             for i in 0..len {
-                let (previous_score, current_score, next_score) = get_three(scores,i);
+                let (previous_score, current_score, next_score) = get_three(scores, i);
 
                 if *current_score <= *previous_score && *current_score <= *next_score {
                     let (behind, current, ahead) = get_three(chunk, i);
