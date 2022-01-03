@@ -11,11 +11,10 @@ pub trait Organism {
 
 /// Returns three references from input, left, center, and right of `items[index]`.
 fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
-    let len = input.len();
     if index == 0 {
         let (behind, ahead) = input.split_at_mut(1);
-        assert!(ahead.len() != 1, "Behind Len: {}, Ahead Len: {}. Input Size: {}", behind.len(), ahead.len(), len);
-        return (&ahead[1], &mut behind[0], &ahead[0]);
+
+        return (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0]);
     }
 
     if index == input.len() - 1 {
