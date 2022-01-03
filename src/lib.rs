@@ -11,10 +11,11 @@ pub trait Organism {
 
 /// Returns three references from input, left, center, and right of `items[index]`.
 fn get_three<T>(input: &mut [T], index: usize) -> (&T, &mut T, &T) {
+    let len = input.len();
     if index == 0 {
         let (behind, ahead) = input.split_at_mut(1);
-
-        return (&ahead[ahead.len() - 1], &mut behind[0], &ahead[0]);
+        assert!(ahead.len() != 1, "Behind Len: {}, Ahead Len: {}. Input Size: {}", behind.len(), ahead.len(), len);
+        return (&ahead[1], &mut behind[0], &ahead[0]);
     }
 
     if index == input.len() - 1 {
@@ -37,7 +38,8 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
         .collect();
 
     // Split the input evenly to work on in parallel.
-    let chunk_size = input.len() / num_cpus::get();
+    let cores = num_cpus::get();
+    let chunk_size = input.len() / cores + (input.len() % (input.len() / cores));
 
     input
         .par_chunks_mut(chunk_size)
