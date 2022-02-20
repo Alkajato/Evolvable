@@ -1,59 +1,31 @@
+use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng};
-use std::fmt;
+use rayon::iter::*;
 
+use self::test_file_writer::StopWatch;
 use crate::evolve;
 use crate::get_chunk_size;
 use crate::Organism;
+use crate::test::test_types::EvNum;
 
-use self::test_file_writer::StopWatch;
+mod test_types;
 mod test_file_writer;
-
-struct EvNum {
-    fitness: f64,
-}
-
-// Organism whose content is soley just the fitness score.
-impl Organism for EvNum {
-    fn calculate_fitness(&self) -> f64 {
-        self.fitness
-    }
-
-    fn mate(&mut self, mate: &EvNum) {
-        // self.fitness = mate.fitness;
-        self.fitness = (mate.fitness + self.fitness) / 2.0;
-    }
-
-    fn mutate(&mut self) {
-        let mut rng = thread_rng();
-        if rng.gen::<f64>() >= 0.2 {
-            let max = 0.5;
-
-            let value: f64 = rng.gen_range(-max..max);
-            self.fitness += value;
-        }
-    }
-}
-
-impl fmt::Display for EvNum {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.fitness)
-    }
-}
 
 fn make_ev_nums(size: usize) -> Vec<EvNum> {
     let mut population: Vec<EvNum> = Vec::with_capacity(size);
 
     for _ in 0..size {
-        population.push(EvNum {
-            fitness: thread_rng().gen::<f64>(),
-        });
+        population.push(EvNum(thread_rng().gen::<f64>()));
     }
 
     population
 }
 
-fn get_average(population: &[impl Organism]) -> f64 {
-    let sum: f64 = population.iter().map(|item| item.calculate_fitness()).sum();
+fn get_average<T: Organism + Send + Sync>(population: &[T]) -> f64 {
+    let sum: f64 = population
+        .par_iter()
+        .map(|item| item.calculate_fitness())
+        .sum();
     sum / (population.len() as f64)
 }
 
@@ -64,15 +36,9 @@ const POP_SIZE: usize = 5_000_000; // Normal value is 5_000_000
 fn test_evolve() {
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
 
-    // population.iter().for_each(|member| print!("{} ", member));
-    // println!("");
-
     let previous_average = get_average(&population);
     evolve(&mut population);
     let current_average = get_average(&population);
-
-    // population.iter().for_each(|member| print!("{} ", member));
-    // println!("");
 
     assert!(
         current_average > previous_average,
@@ -114,3 +80,61 @@ fn test_get_chunk_size() {
         }
     }
 }
+
+// #[test]
+// fn test_effectiveness() {
+//     let test_algorithm = evolve;
+
+//     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
+
+//     let previous_average = get_average(&population);
+//     test_algorithm(&mut population);
+//     let current_average = get_average(&population);
+
+//     assert!(
+//         current_average > previous_average,
+//         "C_Avg: {}, P_Avg: {}",
+//         current_average,
+//         previous_average
+//     );
+// }
+
+// fn evolve_new<T: Organism + Send + Sync>(input: &mut [T]) {
+//     let scores: Vec<f64> = input
+//         .par_iter()
+//         .map(|item| item.calculate_fitness())
+//         .collect();
+
+//     let len = scores.len();
+//     let mating_pool: Vec<bool> = (0..len)
+//         .into_par_iter()
+//         .map(|i| {
+//             let left = if i > 0 { i - 1 } else { len - 1 };
+//             let right = if i < len - 1 { i + 1 } else { 0 };
+
+//             scores[left] < scores[i] || scores[i] > scores[right]
+//         })
+//         .collect();
+
+//     let (mating_pool, mut replacing): (Vec<&T>, Vec<&mut T>) = input
+//         .par_iter_mut()
+//         .zip(mating_pool)
+//         .partition_map(|(member, mated)| {
+//             if mated {
+//                 Either::Left(&*member)
+//             } else {
+//                 Either::Right(member)
+//             }
+//         });
+
+//     replacing.par_iter_mut().for_each_init(
+//         || thread_rng(),
+//         |rng, member| {
+//             if let Some(mate) = mating_pool.choose(rng) {
+//                 member.mate(&mate);
+//             }
+
+//             member.mutate();
+//         },
+//     );
+// }
