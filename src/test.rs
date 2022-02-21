@@ -1,5 +1,3 @@
-use std::fs;
-
 use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::iter::*;
