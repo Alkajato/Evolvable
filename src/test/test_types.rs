@@ -4,6 +4,16 @@ use std::fmt;
 
 pub struct EvNum(pub f64);
 
+pub fn make_ev_nums(size: usize) -> Vec<EvNum> {
+    let mut population: Vec<EvNum> = Vec::with_capacity(size);
+
+    for _ in 0..size {
+        population.push(EvNum(thread_rng().gen::<f64>()));
+    }
+
+    population
+}
+
 // Organism whose content is soley just the fitness score.
 impl Organism for EvNum {
     fn calculate_fitness(&self) -> f64 {

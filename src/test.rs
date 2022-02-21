@@ -8,20 +8,10 @@ use self::test_file_writer::StopWatch;
 use crate::evolve;
 use crate::get_chunk_size;
 use crate::Organism;
-use crate::test::test_types::EvNum;
+use crate::test::test_types::*;
 
 mod test_types;
 mod test_file_writer;
-
-fn make_ev_nums(size: usize) -> Vec<EvNum> {
-    let mut population: Vec<EvNum> = Vec::with_capacity(size);
-
-    for _ in 0..size {
-        population.push(EvNum(thread_rng().gen::<f64>()));
-    }
-
-    population
-}
 
 fn get_average<T: Organism + Send + Sync>(population: &[T]) -> f64 {
     let sum: f64 = population
