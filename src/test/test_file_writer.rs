@@ -46,13 +46,15 @@ impl StopWatch {
     //         .sqrt();
     // }
 
-    /// Writes data about the average time per lap to file.
-    pub fn make_results(&mut self, file_name: &str) {
+    pub fn string_results(&mut self) -> String {
         self.stop();
 
-        let results = format!("Average Time:\n{} seconds", self.average_time);
+        format!("Average Time:\n{} seconds", self.average_time)
+    }
 
-        if let Err(err) = fs::write(file_name, results.as_bytes()) {
+    /// Writes data about the average time per lap to file.
+    pub fn make_results(&mut self, file_name: &str) {
+        if let Err(err) = fs::write(file_name, self.string_results().as_bytes()) {
             eprintln!("Could not write results file! {}", err);
         }
     }
