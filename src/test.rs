@@ -1,3 +1,5 @@
+use std::fs;
+
 use rand::prelude::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::iter::*;
@@ -34,10 +36,12 @@ const POP_SIZE: usize = 5_000_000; // Normal value is 5_000_000
 
 #[test]
 fn test_evolve() {
+    let algorithm = evolve;
+
     let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
 
     let previous_average = get_average(&population);
-    evolve(&mut population);
+    algorithm(&mut population);
     let current_average = get_average(&population);
 
     assert!(
@@ -47,14 +51,25 @@ fn test_evolve() {
         previous_average
     );
 
+    let mut improvement = 0.0;
     let mut writer = StopWatch::new();
     for _ in ITERATIONS {
+        let previous_average = get_average(&population);
+
         writer.start();
-        evolve(&mut population);
+        algorithm(&mut population);
         writer.lap();
+
+        let current_average = get_average(&population);
+
+        let percent_improved = ((current_average / previous_average) * 100.0) - 100.0;
+        improvement += percent_improved;
     }
 
-    writer.make_results("time_evolve().txt");
+    improvement = improvement / ITERATIONS.end as f64;
+    let average_improvement = String::from(format!("Average Improvement: {improvement}%"));
+
+    writer.make_results("time_evolve().txt", Some(average_improvement));
 }
 
 #[test]
@@ -79,24 +94,6 @@ fn test_get_chunk_size() {
             );
         }
     }
-}
-
-#[test]
-fn test_effectiveness() {
-    let test_algorithm = evolve_new;
-
-    let mut population: Vec<EvNum> = make_ev_nums(POP_SIZE);
-
-    let previous_average = get_average(&population);
-    test_algorithm(&mut population);
-    let current_average = get_average(&population);
-
-    assert!(
-        current_average > previous_average,
-        "C_Avg: {}, P_Avg: {}",
-        current_average,
-        previous_average
-    );
 }
 
 fn evolve_new<T: Organism + Send + Sync>(input: &mut [T]) {
