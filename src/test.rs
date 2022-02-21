@@ -31,7 +31,7 @@ fn get_average<T: Organism + Send + Sync>(population: &[T]) -> f64 {
     sum / (population.len() as f64)
 }
 
-const ITERATIONS: std::ops::Range<i32> = 0..12;
+const ITERATIONS: std::ops::Range<i32> = 0..24;
 const POP_SIZE: usize = 5_000_000; // Normal value is 5_000_000
 
 #[test]
@@ -67,7 +67,7 @@ fn test_evolve() {
     }
 
     improvement = improvement / ITERATIONS.end as f64;
-    let average_improvement = String::from(format!("Average Improvement: {improvement}%"));
+    let average_improvement = String::from(format!("Average Improvement:\n{improvement}%"));
 
     writer.make_results("time_evolve().txt", Some(average_improvement));
 }

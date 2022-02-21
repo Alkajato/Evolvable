@@ -4,8 +4,7 @@ use std::time::Instant;
 pub struct StopWatch {
     start: Instant,
     iterations: Vec<f64>,
-    average_time: f64,
-    // std_dev: f64,
+    average_time: f64
 }
 
 impl StopWatch {
@@ -13,8 +12,7 @@ impl StopWatch {
         StopWatch {
             start: Instant::now(),
             iterations: Vec::with_capacity(12),
-            average_time: -1.0,
-            // std_dev: -1.0,
+            average_time: f64::NAN
         }
     }
 
@@ -30,21 +28,12 @@ impl StopWatch {
 
     /// Quits recording, creates the average time each lap took.
     pub fn stop(&mut self) {
+        if self.iterations.len() == 0 {
+            self.lap();
+        }
+
         self.average_time = self.iterations.iter().sum::<f64>() / self.iterations.len() as f64;
     }
-
-    // fn get_std(&mut self) {
-    //     let mut copy = self.iterations.clone();
-    //     self.std_dev = (copy
-    //         .iter_mut()
-    //         .map(|item| {
-    //             *item = self.average_time - *item;
-    //             item.powi(2)
-    //         })
-    //         .sum::<f64>()
-    //         / self.iterations.len() as f64)
-    //         .sqrt();
-    // }
 
     pub fn string_results(&mut self) -> String {
         self.stop();
@@ -53,8 +42,15 @@ impl StopWatch {
     }
 
     /// Writes data about the average time per lap to file.
-    pub fn make_results(&mut self, file_name: &str) {
-        if let Err(err) = fs::write(file_name, self.string_results().as_bytes()) {
+    pub fn make_results(&mut self, file_name: &str, extra: Option<String>) {
+        let output = if let Some(mut str) = extra {
+            str.push_str(&format!("\n\n{}", self.string_results()));
+            str
+        } else {
+            self.string_results()
+        };
+
+        if let Err(err) = fs::write(file_name, output.as_bytes()) {
             eprintln!("Could not write results file! {}", err);
         }
     }
