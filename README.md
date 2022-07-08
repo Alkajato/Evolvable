@@ -5,5 +5,4 @@ Evolvable includes a trait which can be implemented to allow the given type to w
 
 # Include 
 [dependencies]
-
 evolvable = { git = "https://github.com/Alkajato/Evolvable", branch = "main" }
