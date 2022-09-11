@@ -1,5 +1,5 @@
-use rand::{thread_rng, prelude::SliceRandom};
-use rayon::{prelude::*, iter::Either};
+use rand::{prelude::{SliceRandom, ThreadRng}, thread_rng};
+use rayon::{iter::Either, prelude::*};
 
 pub trait Organism {
     /// Calculate and return a fitness score using this.
@@ -7,14 +7,14 @@ pub trait Organism {
     /// Combine the genetic content of the two parent args and make the self contain the resulting DNA.
     fn mate(&mut self, mate: &Self);
     /// Modify the DNA of the Organism randomly.
-    fn mutate(&mut self);
+    fn mutate(&mut self, rng: &mut ThreadRng);
 }
 
-/// Calls calculate_fitness(), mate(), then mutate() accordingly to improve overall fitness.
+/// Calls `calculate_fitness`(), `mate`(), then `mutate`() accordingly to improve overall fitness.
 pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
     let scores: Vec<f64> = input
         .par_iter()
-        .map(|item| item.calculate_fitness())
+        .map(Organism::calculate_fitness)
         .collect();
 
     let len = input.len();
@@ -46,7 +46,7 @@ pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
                 member.mate(mate);
             }
 
-            member.mutate();
+            member.mutate(rng);
         });
 }
 
@@ -68,8 +68,9 @@ pub fn get_best<T: Organism + Send + Sync>(population: &[T]) -> &T {
 pub fn get_average<T: Organism + Send + Sync>(population: &[T]) -> f64 {
     population
         .par_iter()
-        .map(|item| item.calculate_fitness())
-        .sum::<f64>() / (population.len() as f64)
+        .map(Organism::calculate_fitness)
+        .sum::<f64>()
+        / (population.len() as f64)
 }
 
 // Referring to test.rs for separate tests file.
