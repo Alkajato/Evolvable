@@ -18,9 +18,9 @@ fn profile() {
     );
 
     let score = |x: &i32| *x;
-    let cross_over = |x: &mut i32, y: &i32| *x = (*x + y) / 2;
+    let cross_over = |x: &mut i32, y: &i32| *x = ((*x as f32 + *y as f32) / 2.0).round() as i32;
     let mutate = |x: &mut i32| unsafe {
-        let nums = [-2, -1, 1, 2];
+        let nums = [-1, 1];
         *x += nums.get_unchecked(thread_rng().gen_range(0..nums.len()));
     };
 
@@ -34,11 +34,6 @@ fn profile() {
         let time = start.elapsed().as_secs_f64();
         total_time += time;
 
-        eprint!(
-            "Run[{count}]: {time} \tAvg: {}\r",
-            total_time / count as f64
-        );
-
         let current_average: f32 =
             population.par_iter().map(|x| *x as f32).sum::<f32>() / POP_SIZE as f32;
 
@@ -47,6 +42,11 @@ fn profile() {
             "C_Avg: {}, P_Avg: {}",
             current_average,
             previous_average
+        );
+
+        eprint!(
+            "\x1b[2KRun[{count}]: {time} \tAvg time: {:.17} \tAvg score: {current_average}\r",
+            total_time / count as f64
         );
     }
 
@@ -63,14 +63,16 @@ fn observe() {
     );
 
     let score = |x: &i32| *x;
-    let cross_over = |x: &mut i32, y: &i32| *x = (*x + y) / 2;
+    let cross_over = |x: &mut i32, y: &i32| *x = ((*x as f32 + *y as f32) / 2.0).round() as i32;
     let mutate = |x: &mut i32| unsafe {
-        let nums = [-2, -1, 1, 2];
+        let nums = [-1, 1];
         *x += nums.get_unchecked(thread_rng().gen_range(0..nums.len()));
     };
 
     for _ in 0.. {
         evolve(&mut population, score, cross_over, mutate);
-        eprintln!("{population:?}");
+        eprint!("\x1b[2K{population:?}\r");
+
+        std::thread::sleep(std::time::Duration::from_secs_f32(0.7));
     }
 }
