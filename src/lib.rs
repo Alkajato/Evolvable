@@ -1,76 +1,53 @@
-use rand::{prelude::{SliceRandom, ThreadRng}, thread_rng};
-use rayon::{iter::Either, prelude::*};
+use rayon::prelude::{
+    FromParallelIterator, IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator,
+    IntoParallelRefMutIterator, ParallelIterator,
+};
 
-pub trait Organism {
-    /// Calculate and return a fitness score using this.
-    fn calculate_fitness(&self) -> f64;
-    /// Combine the genetic content of the two parent args and make the self contain the resulting DNA.
-    fn mate(&mut self, mate: &Self);
-    /// Modify the DNA of the Organism randomly.
-    fn mutate(&mut self, rng: &mut ThreadRng);
-}
+/// Parallel naiive genetic algorithm that uses crossover and mutation operators.
+/// Cross overs mutate the first arg to cross over with the read-only reference arg.
+pub fn evolve<T: Send + Sync, U: PartialOrd + Send + Sync>(
+    population: &mut [T],
+    score: impl Fn(&T) -> U + Send + Sync,
+    cross_over: impl Fn(&mut T, &T) + Send + Sync,
+    mutate: impl Fn(&mut T) + Send + Sync,
+) {
+    let len = population.len();
+    if len == 0 {
+        return;
+    }
 
-/// Calls `calculate_fitness`(), `mate`(), then `mutate`() accordingly to improve overall fitness.
-pub fn evolve<T: Organism + Send + Sync>(input: &mut [T]) {
-    let scores: Vec<f64> = input
-        .par_iter()
-        .map(Organism::calculate_fitness)
-        .collect();
+    let scores = Vec::from_par_iter(population.par_iter().map(score));
 
-    let len = input.len();
-    let mating_pool: Vec<bool> = (0..len)
-        .into_par_iter()
-        .map(|i| {
-            let left = if i > 0 { i - 1 } else { len - 1 };
-            let right = if i < len - 1 { i + 1 } else { 0 };
-
-            scores[left] < scores[i] || scores[i] > scores[right]
-        })
-        .collect();
-
-    let (mating_pool, mut replacing): (Vec<&T>, Vec<&mut T>) = input
-        .par_iter_mut()
-        .zip(mating_pool)
-        .partition_map(|(member, mated)| {
-            if mated {
-                Either::Left(&*member)
-            } else {
-                Either::Right(member)
-            }
+    // Culled if equal to a neighbor and under another,
+    // under both neighbors, or equal both neighbors.
+    let (culled, survive): (Vec<_>, Vec<_>) =
+        population.par_iter_mut().enumerate().partition(|(i, _)| {
+            let (prev, next) = neighbors(*i, len);
+            scores[prev] >= scores[*i] && scores[*i] <= scores[next]
         });
 
-    replacing
-        .par_iter_mut()
-        .for_each_init(thread_rng, |rng, member| {
-            if let Some(mate) = mating_pool.choose(rng) {
-                member.mate(mate);
-            }
+    culled.into_par_iter().for_each(|(i, change)| {
+        let (prev, next) = neighbors(i, len);
 
-            member.mutate(rng);
-        });
+        let mut compare = next;
+        if scores[prev] > scores[next] {
+            compare = prev;
+        }
+
+        if let Ok(index) = survive.binary_search_by(|(x, _)| x.cmp(&compare)) {
+            cross_over(change, survive[index].1);
+        }
+
+        mutate(change);
+    });
 }
 
-/// Returns the best Organism struct from population.
-pub fn get_best<T: Organism + Send + Sync>(population: &[T]) -> &T {
-    population
-        .par_iter()
-        .reduce_with(|one, two| {
-            if one.calculate_fitness() > two.calculate_fitness() {
-                one
-            } else {
-                two
-            }
-        })
-        .expect("Population failed to yield best from get_best()")
-}
-
-/// Returns the average fitness score from population.
-pub fn get_average<T: Organism + Send + Sync>(population: &[T]) -> f64 {
-    population
-        .par_iter()
-        .map(Organism::calculate_fitness)
-        .sum::<f64>()
-        / (population.len() as f64)
+/// Wraps around borders, gets "left" and "right" of `index`.
+/// Panics in debug if `len` is `0`.
+fn neighbors(index: usize, len: usize) -> (usize, usize) {
+    let prev = (index + len - 1) % len;
+    let next = (index + 1) % len;
+    (prev, next)
 }
 
 // Referring to test.rs for separate tests file.
