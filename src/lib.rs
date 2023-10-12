@@ -52,7 +52,7 @@ impl<T: Evolvable> Evolver<T> {
                     }
 
                     // It is very unlikely two threads are close enough in the population Vec
-                    // that they read their own neighbor into the contents another thread is mutating.
+                    // that them reading their own neighbors reads into content another thread is mutating.
                     let current = (&self.population[i]) as *const T as *mut T;
                     (*current).mate(&self.population[mate]);
                     (*current).mutate();
