@@ -51,11 +51,10 @@ impl<T: Evolvable> Evolver<T> {
                         mate = left;
                     }
 
-                    // If one neighbor is worse then population[i] is not mut referenced.
-                    // So at any given index if we mutate we do not have writes happening to our neighbors.
-                    // Therefore this is safe across threads because at worst multiple threads will only read-access the same thing.
+                    // It is very unlikely two threads are close enough in the population Vec
+                    // that they read their own neighbor into the contents another thread is mutating.
                     let current = (&self.population[i]) as *const T as *mut T;
-                    (*current).mate(self.population.get_unchecked(mate));
+                    (*current).mate(&self.population[mate]);
                     (*current).mutate();
 
                     let ptr = score as *const f32 as *mut f32;
