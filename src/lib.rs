@@ -39,6 +39,7 @@ impl<T: Evolvable> Evolver<T> {
             let left = if i > 0 { i - 1 } else { len - 1 };
             let right = if i < len - 1 { i + 1 } else { 0 };
 
+            // Data race conditions should not occur if the user passed calling Evolver::new successfully.
             unsafe {
                 let score = &self.scores[i];
                 let score_left = &self.scores[left];
