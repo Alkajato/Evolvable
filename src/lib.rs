@@ -8,7 +8,7 @@ pub trait Evolvable: Send + Sync {
 
 pub struct Evolver<T: Evolvable> {
     pub scores: Vec<f32>,
-    population: Vec<T>,
+    pub population: Vec<T>,
 }
 
 impl<T: Evolvable> Evolver<T> {
