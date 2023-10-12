@@ -13,10 +13,9 @@ pub struct Evolver<T: Evolvable> {
 
 impl<T: Evolvable> Evolver<T> {
     pub fn new(population: Vec<T>) -> Self {
-        let cpu_count = num_cpus::get();
         let len = population.len();
 
-        let min_safe_size = cpu_count * 2;
+        let min_safe_size = num_cpus::get() * 2;
         assert!(len >= min_safe_size, "Unexpectedly small population size may enable rare memory safety violations. Expected at least {min_safe_size}, got {len}");
 
         let scores = population.par_iter().map(Evolvable::score).collect();
