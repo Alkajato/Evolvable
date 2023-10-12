@@ -47,7 +47,6 @@ fn profile() {
 
         let start = Instant::now();
         optimizer.evolve();
-        // evolve(&mut population, score, cross_over, mutate);
         let time = start.elapsed().as_secs_f64();
         total_time += time;
 
