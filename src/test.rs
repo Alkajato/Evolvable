@@ -85,7 +85,7 @@ fn observe() {
 
     let mut optimizer = Evolver::new(population);
 
-    for _ in 0.. {
+    loop {
         optimizer.evolve();
         eprint!("\x1b[2K{:?}\r", optimizer.population);
 
