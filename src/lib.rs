@@ -17,7 +17,7 @@ impl<T: Evolvable> Evolver<T> {
         let len = population.len();
 
         let min_safe_size = cpu_count * 2;
-        assert!(len >= min_safe_size, "Unexpectedly small population size may enable rare memory safety violations. Expected at least more than {min_safe_size}, got {len}");
+        assert!(len >= min_safe_size, "Unexpectedly small population size may enable rare memory safety violations. Expected at least {min_safe_size}, got {len}");
 
         let scores = population.par_iter().map(Evolvable::score).collect();
         Evolver { scores, population }
@@ -32,7 +32,6 @@ impl<T: Evolvable> Evolver<T> {
     }
 
     /// Parallel naiive genetic algorithm that uses crossover and mutation operators.
-    /// Cross overs mutate the first arg to cross over with the read-only reference arg.
     #[allow(invalid_reference_casting)]
     pub fn evolve(&mut self) {
         let len = self.scores.len();
