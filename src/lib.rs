@@ -1,9 +1,6 @@
 use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-pub trait Evolvable
-where
-    Self: Send + Sync,
-{
+pub trait Evolvable: Send + Sync {
     fn mate(&mut self, mate: &Self);
     fn score(&self) -> f32;
     fn mutate(&mut self);
